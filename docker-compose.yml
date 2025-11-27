@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  data:
+    image: mariadb:latest
+    container_name: data
+    environment:
+      - MARIADB_RANDOM_ROOT_PASSWORD=yes
+      - MARIADB_DATABASE=mabase
+      - MARIADB_USER=monuser
+      - MARIADB_PASSWORD=password
+    volumes:
+      - ./app/create.sql:/docker-entrypoint-initdb.d/create.sql
+    networks:
+      - app-network
+
+  script:
+    build: .
+    container_name: script
+    volumes:
+      - ./app:/app
+    networks:
+      - app-network
+    depends_on:
+      - data
+
+  http:
+    image: nginx:alpine
+    container_name: http
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/app
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - app-network
+    depends_on:
+      - script
+
+networks:
+  app-network:
+    driver: bridge
